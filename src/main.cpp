@@ -16,7 +16,7 @@
 #include "bpm.h"
 #include "clock.h"
 
-int8_t pins[8] = { 15, -1, -1, -1, -1 , -1, -1, -1 }; 
+int8_t pins[8] = { PIN_NEOPIXEL, -1, -1, -1, -1 , -1, -1, -1 }; 
 #define COLOR_ORDER NEO_RGB
 
 #define num_pixels 96
@@ -159,10 +159,10 @@ void loop() {
     //delay(1000);
   }
 
-  if (ticked && is_bpm_on_beat(ticks) == 0) {
+  /*if (ticked && is_bpm_on_beat(ticks) == 0) {
     if (is_bpm_on_bar(ticks))
       Serial.println("----BAR----!");
     Serial.printf("beat %i! (tick %i)\n", ticks / 24, ticks);
-  }
+  }*/
 
 }
