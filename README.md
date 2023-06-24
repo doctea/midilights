@@ -18,5 +18,6 @@ rgb led indicator of midi clock etc
 - Different modes, eg
  - Instead of indicating MIDI clock, indicate different drum hits on channel 10
  - Instead of indicating 4 beats per strip, indicate a whole phrase of 16 beats
- - Control multiple strips simultaneously
+ - Instead of indicating MIDI clock, indicate pitches played, velocities, etc
+- Control multiple strips simultaneously with a different mode for each
 - ???

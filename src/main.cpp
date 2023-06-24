@@ -1,27 +1,14 @@
-#define USE_TINYUSB
-
 #include "Config.h"
 
 #include <Arduino.h>
 #include "Adafruit_NeoPXL8.h"
 
-// MIDI + USB
-//#ifdef USE_TINYUSB
-//#include <Adafruit_TinyUSB.h>
-//#endif
-//#include <MIDI.h>
-
-#include "midi/midi_usb.h"
+#include "midi_usb/midi_usb_rp2040.h"
 
 #include "bpm.h"
 #include "clock.h"
 
-int8_t pins[8] = { PIN_NEOPIXEL, -1, -1, -1, -1 , -1, -1, -1 }; 
-#define COLOR_ORDER NEO_RGB
-
-#define num_pixels 96
-
-Adafruit_NeoPXL8 leds(num_pixels, pins, COLOR_ORDER);
+Adafruit_NeoPXL8 leds(NUM_PIXELS, pins, COLOR_ORDER);
 
 // put function declarations here:
 int myFunction(int, int);
@@ -85,7 +72,7 @@ void loop() {
       peak = VAL_GLOBAL_ON_BEAT;
 
     //Serial.println("=====tick=====");
-    for (int n = 0 ; n < num_pixels ; n++) {
+    for (int n = 0 ; n < NUM_PIXELS ; n++) {
       #ifdef LED_DIRECTION_REVERSE
         int i = num_pixels - n;
       #else
@@ -101,7 +88,7 @@ void loop() {
       #ifndef LED_DIRECTION_REVERSE
         varhue = 1.0f - varhue;
       #endif
-      float h = varhue + ((float)((ticks%(num_pixels)))/(float)num_pixels);
+      float h = varhue + ((float)((ticks%(NUM_PIXELS)))/(float)NUM_PIXELS);
       float s = SAT_MINIMUM; // saturation initial
       //float h = varhue + ((float)num_pixels) / ((float)(ticks%num_pixels));
 
@@ -113,7 +100,7 @@ void loop() {
       }*/
 
       // if the current pixel corresponds to the current tick, make it bright
-      if (ticks % num_pixels == i)
+      if (ticks % NUM_PIXELS == i)
         p = VAL_CURRENT_TICK_PIXEL;
 
       //Serial.printf("pixel@\t%2i/%2i: hsv(%2.4f,\t%2.4f,\t%2.4f)\n", i, num_pixels, varhue, 1.0f, p);
@@ -121,9 +108,9 @@ void loop() {
       // set a slightly brighter colour proportional to proximity to the current beat marker
       //if (ticked && is_bpm_on_beat(ticks)) {
         //int pixel_distance_from_beat = abs((uint8_t)(BPM_CURRENT_BEAT_OF_BAR * PPQN) - n);
-        float pixel_distance_from_beat = abs((int8_t)(ticks%num_pixels) - i);
+        float pixel_distance_from_beat = abs((int8_t)(ticks%NUM_PIXELS) - i);
         if(pixel_distance_from_beat==0) pixel_distance_from_beat = 0.5; // avoid division by zero
-        bool after_current = (int8_t)(ticks%num_pixels) < i;
+        bool after_current = (int8_t)(ticks%NUM_PIXELS) < i;
         //int pixel_distance_from_beat = (int8_t)(ticks%num_pixels) - i;
         if (!after_current && pixel_distance_from_beat > 0) { //} && pixel_distance_from_beat < 12) {
           s = constrain(s + ((SAT_MAXIMUM-SAT_MINIMUM) / (float)(pixel_distance_from_beat)), SAT_MINIMUM, SAT_MAXIMUM);

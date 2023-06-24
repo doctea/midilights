@@ -1,7 +1,11 @@
-#define USE_TINYUSB
+#ifndef CONFIG__INCLUDED
+#define CONFIG__INCLUDED
+
+#include <Arduino.h>
+
+#define NUM_PIXELS 96
 
 //#define LED_DIRECTION_REVERSE
-
 #define PEAK_DROP_RATE          (PPQN/8)
 
 #define VAL_GLOBAL_ON_PHRASE    1.0f
@@ -13,3 +17,8 @@
 
 #define SAT_MINIMUM             0.75f
 #define SAT_MAXIMUM             1.0f
+
+int8_t pins[8] = { PIN_NEOPIXEL, -1, -1, -1, -1 , -1, -1, -1 }; 
+#define COLOR_ORDER NEO_RGB
+
+#endif
