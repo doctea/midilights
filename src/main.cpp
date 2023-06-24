@@ -37,28 +37,14 @@ uint32_t ms_per_tick = 22;
 float peak = 0.0;
 //uint32_t ticks = 0;
 void loop() {
-  // put your main code here, to run repeatedly:
-  /*Serial.println("hello");
-  delay(500);
-  for (int i = 0 ; i < num_pixels ; i++) {
-    leds.setPixelColor(i, random(255), random(255), random(255), random(255));
-    leds.show();
-  }*/
-
   #ifdef USE_TINYUSB
       USBMIDI.read();
   #endif
 
   bool ticked = false;
   ticked = update_clock_ticks();
-  /*if (millis() - last_ticked > ms_per_tick) {
-    last_ticked = millis();
-    ticks++;
-    ticked = true;
-  }*/
 
   if (ticked) {
-
     // fade global brightness value every tick
     peak -= peak/(float)(PEAK_DROP_RATE);
     if (peak < VAL_MINIMUM)
@@ -106,31 +92,19 @@ void loop() {
       //Serial.printf("pixel@\t%2i/%2i: hsv(%2.4f,\t%2.4f,\t%2.4f)\n", i, num_pixels, varhue, 1.0f, p);
 
       // set a slightly brighter colour proportional to proximity to the current beat marker
-      //if (ticked && is_bpm_on_beat(ticks)) {
-        //int pixel_distance_from_beat = abs((uint8_t)(BPM_CURRENT_BEAT_OF_BAR * PPQN) - n);
-        float pixel_distance_from_beat = abs((int8_t)(ticks%NUM_PIXELS) - i);
-        if(pixel_distance_from_beat==0) pixel_distance_from_beat = 0.5; // avoid division by zero
-        bool after_current = (int8_t)(ticks%NUM_PIXELS) < i;
-        //int pixel_distance_from_beat = (int8_t)(ticks%num_pixels) - i;
-        if (!after_current && pixel_distance_from_beat > 0) { //} && pixel_distance_from_beat < 12) {
-          s = constrain(s + ((SAT_MAXIMUM-SAT_MINIMUM) / (float)(pixel_distance_from_beat)), SAT_MINIMUM, SAT_MAXIMUM);
-          p = constrain(p + ((VAL_MAXIMUM-VAL_MINIMUM) / (float)(pixel_distance_from_beat*2.0)), VAL_MINIMUM, VAL_MAXIMUM);
-        } else if (after_current) { //} && pixel_distance_from_beat < 0) {
-          //p = constrain(p / abs((float)pixel_distance_from_beat), VAL_MINIMUM, peak);
-          //p /= (float)pixel_distance_from_beat;
-          p = peak/2.0;
-          s /= pixel_distance_from_beat;
-        }/* else if (pixel_distance_from_beat > 0) {
-          p = constrain(p / pixel_distance_from_beat, 0.5, peak);
-        }*/
-        /*if (i > ticks % num_pixels)
-          //p = constrain(p / (float)pixel_distance_from_beat, 0.0f, 0.5f);
-          p = constrain(p, 0.0f, 0.5f);
-        else
-          p = constrain(p, 0.5, 1.0f);
-          */
-        //Serial.printf("for beat %i and pixel\t%2i, got pixel_distance=%2i and resulting sat\t%.2f\n", BPM_CURRENT_BEAT_OF_BAR, n, pixel_distance_from_beat, s);
-      //}
+      float pixel_distance_from_beat = abs((int8_t)(ticks%NUM_PIXELS) - i);
+      if(pixel_distance_from_beat==0) pixel_distance_from_beat = 0.5; // avoid division by zero
+      bool after_current = (int8_t)(ticks%NUM_PIXELS) < i;
+      //int pixel_distance_from_beat = (int8_t)(ticks%num_pixels) - i;
+      if (!after_current && pixel_distance_from_beat > 0) { //} && pixel_distance_from_beat < 12) {
+        s = constrain(s + ((SAT_MAXIMUM-SAT_MINIMUM) / (float)(pixel_distance_from_beat)), SAT_MINIMUM, SAT_MAXIMUM);
+        p = constrain(p + ((VAL_MAXIMUM-VAL_MINIMUM) / (float)(pixel_distance_from_beat*2.0)), VAL_MINIMUM, VAL_MAXIMUM);
+      } else if (after_current) { //} && pixel_distance_from_beat < 0) {
+        //p = constrain(p / abs((float)pixel_distance_from_beat), VAL_MINIMUM, peak);
+        //p /= (float)pixel_distance_from_beat;
+        p = peak/2.0;
+        s /= pixel_distance_from_beat;
+      }
 
       // convert to final colours
       uint16_t hue = 65536.0 * h;
@@ -145,11 +119,5 @@ void loop() {
     leds.show();
     //delay(1000);
   }
-
-  /*if (ticked && is_bpm_on_beat(ticks) == 0) {
-    if (is_bpm_on_bar(ticks))
-      Serial.println("----BAR----!");
-    Serial.printf("beat %i! (tick %i)\n", ticks / 24, ticks);
-  }*/
 
 }
