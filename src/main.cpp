@@ -1,6 +1,9 @@
 #include "Config.h"
 
 #include <Arduino.h>
+#include <SPI.h>
+
+#include "Adafruit_TinyUSB.h"
 #include "Adafruit_NeoPXL8.h"
 
 #include "midi_usb/midi_usb_rp2040.h"
@@ -8,16 +11,24 @@
 #include "bpm.h"
 #include "clock.h"
 
-Adafruit_NeoPXL8 leds(NUM_PIXELS, pins, COLOR_ORDER);
+Adafruit_NeoPXL8 *leds; //(NUM_PIXELS, pins, COLOR_ORDER);
 
-// put function declarations here:
-int myFunction(int, int);
+light_mode_t mode = DEFAULT_LIGHT_MODE;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
 
-  if (!leds.begin()) {
+  if (mode==DEFAULT) {
+    leds = new Adafruit_NeoPXL8(NUM_PIXELS, pins, COLOR_ORDER);
+  } else if (mode==REPEATED || mode==REPEATED_REVERSE_SECOND) {
+    leds = new Adafruit_NeoPXL8(NUM_PIXELS*2, pins, COLOR_ORDER);
+  } else if (mode==DOUBLED_LENGTH) {
+    NUM_PIXELS *= 2;
+    leds = new Adafruit_NeoPXL8(NUM_PIXELS, pins, COLOR_ORDER);
+  }
+
+  if (!leds->begin()) {
     pinMode(LED_BUILTIN, OUTPUT);
     for (;;) {
       Serial.println("no worky");
@@ -28,17 +39,14 @@ void setup() {
   setup_midi();
   setup_usb();
 
-  leds.show(); // Clear initial LED state
+  leds->show(); // Clear initial LED state
 }
 
-uint32_t last_ticked = 0;
-uint32_t ms_per_tick = 22;
-
 float peak = 0.0;
-//uint32_t ticks = 0;
+
 void loop() {
   #ifdef USE_TINYUSB
-      USBMIDI.read();
+    USBMIDI.read();
   #endif
 
   bool ticked = false;
@@ -70,7 +78,7 @@ void loop() {
         peak = VAL_MINIMUM;
 
       //float varhue = (float)i / (float)num_pixels;
-      float varhue = (float)(ticks%(PPQN*BARS_PER_PHRASE*BEATS_PER_BAR)) / (float)(PPQN*BARS_PER_PHRASE*BEATS_PER_BAR);
+      float varhue = (float)(ticks%(TICKS_PER_PHRASE)) / (float)(TICKS_PER_PHRASE);
       #ifndef LED_DIRECTION_REVERSE
         varhue = 1.0f - varhue;
       #endif
@@ -78,7 +86,7 @@ void loop() {
       float s = SAT_MINIMUM; // saturation initial
       //float h = varhue + ((float)num_pixels) / ((float)(ticks%num_pixels));
 
-      // so that we can remember the global peak in order to smoother flashes
+      // so that we can remember the global peak in order to smooth flashes
       float p = peak;
       // if we've just ticked and on a beat, make whole strip go bright with global brightness!
       /*if (ticked && is_bpm_on_beat(ticks)) {
@@ -113,10 +121,16 @@ void loop() {
 
       //Serial.printf("pixel@\t%2i/%2i: hsv(%i,\t%i,\t%i)\n", i, num_pixels, hue, sat, val);
       // do the actual setting
-      uint32_t color = leds.ColorHSV(hue, sat, val); 
-      leds.setPixelColor(i, color);
+      //uint32_t color = leds->gamma32(leds->ColorHSV(hue, sat, val));  // hmmm gamma32 seems to wreck pixel brightness, but it actually is a kinda cool effect
+      uint32_t color = leds->ColorHSV(hue, sat, val);  
+      leds->setPixelColor(i, color);
+      if (mode==REPEATED) {
+        leds->setPixelColor(NUM_PIXELS + i, color);
+      } else if (mode==REPEATED_REVERSE_SECOND) {
+        leds->setPixelColor(NUM_PIXELS + (NUM_PIXELS - i), color);
+      }
     }
-    leds.show();
+    leds->show();
     //delay(1000);
   }
 
