@@ -4,7 +4,8 @@
 #include <Arduino.h>
 
 //#define NUM_PIXELS 96
-int NUM_PIXELS = 96;
+//int NUM_PIXELS = 96;
+int NUM_PIXELS = 192;
 
 enum light_mode_t {
   DEFAULT,      // 'standard' mode of NUM_PIXELS elements per bar
@@ -12,10 +13,10 @@ enum light_mode_t {
   REPEATED_REVERSE_SECOND,  // NUM_PIXELS elements per bar, but repeated for a total of NUM_PIXELS * 2, with second set reversed
   DOUBLED_LENGTH
 };
-//#define DEFAULT_LIGHT_MODE = light_mode_t::DEFAULT;
+#define DEFAULT_LIGHT_MODE light_mode_t::DEFAULT;
 //#define DEFAULT_LIGHT_MODE (light_mode_t::REPEATED)
-#define DEFAULT_LIGHT_MODE (light_mode_t::REPEATED_REVERSE_SECOND)
-//#define DEFAULT_LIGHT_MODE = light_mode_t::DOUBLED_LENGTH;
+//#define DEFAULT_LIGHT_MODE (light_mode_t::REPEATED_REVERSE_SECOND)
+//#define DEFAULT_LIGHT_MODE light_mode_t::DOUBLED_LENGTH;
 
 //#define LED_DIRECTION_REVERSE
 #define PEAK_DROP_RATE          (PPQN/8)
