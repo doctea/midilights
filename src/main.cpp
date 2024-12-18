@@ -71,13 +71,22 @@ void setup() {
 #include "parameter_inputs/ParameterInput.h"
 #include "parameter_inputs/VirtualParameterInput.h"
 
+#include "parameter_inputs/VoltageParameterInput.h"
+#include "voltage_sources/ADS24vVoltageSource.h"
+#include "devices/ADCPimoroni24v.h"
 
 ParameterManager *parameter_manager = nullptr;
 
-VirtualParameterInput *lfo1;
-VirtualParameterInput *lfo2;
-VirtualParameterInput *lfo3;
+//using InputType = VirtualParameterInput;
+using InputType = VoltageParameterInput;
+
+ADS1015 adcdevice(0x49,&Wire);
+
+InputType *lfo1;
+InputType *lfo2;
+InputType *lfo3;
 VirtualParameterInput *lfo4, *lfo5;
+
 FloatParameter *p1;
 FloatParameter *p2;
 FloatParameter *p3;
@@ -92,11 +101,17 @@ float p4_history[NUM_PIXELS_UV];
 void setup_parameter_inputs() {
   parameter_manager = new ParameterManager(TICKS_PER_PHRASE);
   parameter_manager->init();
-  //parameter_manager->debug = true;
+  parameter_manager->debug = true;
 
-  lfo1 = new VirtualParameterInput("LFO1", "LFOs", LFO_LOCKED);
+  parameter_manager->addADCDevice(new ADCPimoroni24v(ENABLE_CV_INPUT, &Wire, 5.0));
+  parameter_manager->auto_init_devices();
+
+  /*lfo1 = new VirtualParameterInput("LFO1", "LFOs", LFO_LOCKED);
   lfo2 = new VirtualParameterInput("LFO2", "LFOs", LFO_FREE);
-  lfo3 = new VirtualParameterInput("LFO3", "LFOs", LFO_LOCKED);
+  lfo3 = new VirtualParameterInput("LFO3", "LFOs", LFO_LOCKED);*/
+  lfo1 = (InputType*) parameter_manager->available_inputs->get(0);
+  lfo2 = (InputType*) parameter_manager->available_inputs->get(1);
+  lfo3 = (InputType*) parameter_manager->available_inputs->get(2);
   lfo4 = new VirtualParameterInput("LFO4", "LFOs", LFO_FREE);
   lfo5 = new VirtualParameterInput("LFO5", "LFOs", LFO_FREE);
   
@@ -136,11 +151,11 @@ void setup_parameter_inputs() {
   p4->connect_input(lfo2, 0.33);
   p4->connect_input(lfo3, -0.33);
 
-  lfo1->locked_period = 4.0; //105; //4.0;
+  /*lfo1->locked_period = 4.0; //105; //4.0;
   lfo3->locked_period = 3.0; //170; //3.0;
 
   lfo2->locked_phase = 0.25;
-  lfo2->free_sine_divisor = 105.0; //50.0;
+  lfo2->free_sine_divisor = 105.0; //50.0;*/
   lfo4->locked_phase = 0.75;
   lfo4->free_sine_divisor = 3570.0; //150.0;
 }
@@ -264,9 +279,9 @@ void loop() {
 
   bool ticked = false;
   ticked = update_clock_ticks();
-  //if (ticked) Serial.println("ticked!");
+  if (ticked) Serial.println("ticked!");
 
-  parameter_manager->throttled_update_cv_input__all();
+  //parameter_manager->throttled_update_cv_input__all();
   //parameter_manager->update_inputs();
 
   /*if (ticked) {
@@ -293,7 +308,7 @@ void loop() {
   }*/
 
 
-  if (ticked) {
+  if (false && ticked) {
     p1_history[++p1_cursor % NUM_PIXELS_RGB] = p1->getLastModulatedNormalValue();
     p2_history[++p2_cursor % NUM_PIXELS_RGB] = p2->getLastModulatedNormalValue();
     p3_history[++p3_cursor % NUM_PIXELS_RGB] = p3->getLastModulatedNormalValue();
@@ -304,10 +319,12 @@ void loop() {
     ++p3_cursor;
     ++p4_cursor;*/
     
+    /*
     p1_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p1->getLastModulatedNormalValue();
     p2_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p2->getLastModulatedNormalValue();
     p3_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p3->getLastModulatedNormalValue();
     p4_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_UV),0,NUM_PIXELS_UV-1)]  *= p4->getLastModulatedNormalValue();
+    */
 
   }
 
