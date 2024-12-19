@@ -101,35 +101,44 @@ float p4_history[NUM_PIXELS_UV];
 void setup_parameter_inputs() {
   parameter_manager = new ParameterManager(TICKS_PER_PHRASE);
   parameter_manager->init();
-  parameter_manager->debug = true;
+  //parameter_manager->debug = true;
+
+  Wire.begin();
+  adcdevice.begin();
 
   parameter_manager->addADCDevice(new ADCPimoroni24v(ENABLE_CV_INPUT, &Wire, 5.0));
   parameter_manager->auto_init_devices();
 
+  // create input sources
   /*lfo1 = new VirtualParameterInput("LFO1", "LFOs", LFO_LOCKED);
   lfo2 = new VirtualParameterInput("LFO2", "LFOs", LFO_FREE);
   lfo3 = new VirtualParameterInput("LFO3", "LFOs", LFO_LOCKED);*/
-  lfo1 = (InputType*) parameter_manager->available_inputs->get(0);
-  lfo2 = (InputType*) parameter_manager->available_inputs->get(1);
-  lfo3 = (InputType*) parameter_manager->available_inputs->get(2);
+  lfo1 = new VoltageParameterInput((char*)"A", "ADC1", parameter_manager->voltage_sources->get(0));
+  lfo2 = new VoltageParameterInput((char*)"B", "ADC1", parameter_manager->voltage_sources->get(1));
+  lfo3 = new VoltageParameterInput((char*)"C", "ADC1", parameter_manager->voltage_sources->get(2));
   lfo4 = new VirtualParameterInput("LFO4", "LFOs", LFO_FREE);
   lfo5 = new VirtualParameterInput("LFO5", "LFOs", LFO_FREE);
   
+  // tell the parameter manager about them
   parameter_manager->addInput(lfo1);
   parameter_manager->addInput(lfo2);
   parameter_manager->addInput(lfo3);
   parameter_manager->addInput(lfo4);
   parameter_manager->addInput(lfo5);
 
+  // create the parameters
   p1 = new FloatParameter("hue");
   p2 = new FloatParameter("sat");
   p3 = new FloatParameter("val");
   p4 = new FloatParameter("uv");
 
+  // tell parameter manager about them
   parameter_manager->addParameter(p1);
   parameter_manager->addParameter(p2);
   parameter_manager->addParameter(p3);
   parameter_manager->addParameter(p4);
+  
+  parameter_manager->setDefaultParameterConnections();
 
   /*p1->maximumNormalValue = 1.0;
   p1->minimumNormalValue = -0.5;
@@ -146,9 +155,9 @@ void setup_parameter_inputs() {
   p3->connect_input(lfo3, 1.0);
   p3->connect_input(lfo4, -0.25);
 
-  p4->connect_input(lfo4, 1.0);
-  p4->connect_input(lfo1, -0.25);
-  p4->connect_input(lfo2, 0.33);
+  p4->connect_input(lfo1, 1.0);
+  p4->connect_input(lfo2, -0.25);
+  //p4->connect_input(lfo2, 0.33);
   p4->connect_input(lfo3, -0.33);
 
   /*lfo1->locked_period = 4.0; //105; //4.0;
@@ -279,9 +288,11 @@ void loop() {
 
   bool ticked = false;
   ticked = update_clock_ticks();
-  if (ticked) Serial.println("ticked!");
 
-  //parameter_manager->throttled_update_cv_input__all();
+  //if (ticked) 
+    Serial.println("ticked!");
+
+  parameter_manager->throttled_update_cv_input__all();
   //parameter_manager->update_inputs();
 
   /*if (ticked) {
@@ -308,23 +319,23 @@ void loop() {
   }*/
 
 
-  if (false && ticked) {
+  if (ticked) {
     p1_history[++p1_cursor % NUM_PIXELS_RGB] = p1->getLastModulatedNormalValue();
     p2_history[++p2_cursor % NUM_PIXELS_RGB] = p2->getLastModulatedNormalValue();
     p3_history[++p3_cursor % NUM_PIXELS_RGB] = p3->getLastModulatedNormalValue();
     p4_history[++p4_cursor % NUM_PIXELS_UV]  = p4->getLastModulatedNormalValue();
 
+    //Serial.printf("p4->getLastModulatedNormalValue() => %3.3f\n", p4->getLastModulatedNormalValue());
+
     /*++p1_cursor;
     ++p2_cursor;
     ++p3_cursor;
     ++p4_cursor;*/
-    
-    /*
+        
     p1_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p1->getLastModulatedNormalValue();
     p2_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p2->getLastModulatedNormalValue();
     p3_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p3->getLastModulatedNormalValue();
-    p4_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_UV),0,NUM_PIXELS_UV-1)]  *= p4->getLastModulatedNormalValue();
-    */
+    //p4_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_UV), 0,NUM_PIXELS_UV -1)]  *= p4->getLastModulatedNormalValue();
 
   }
 
