@@ -18,7 +18,7 @@ Adafruit_NeoPXL8 *leds; //(NUM_PIXELS, pins, COLOR_ORDER);
 light_mode_t mode = DEFAULT_LIGHT_MODE;
 
 
-#define NUM_PIXELS_RGB 96
+#define NUM_PIXELS_RGB (96*2)
 #define NUM_PIXELS_UV 60
 
 void setup_parameter_inputs();
@@ -53,8 +53,10 @@ void setup() {
 
   Serial.println("setup_midi!"); Serial.flush();
   setup_midi();
-  Serial.println("setup_usb!"); Serial.flush();
-  setup_usb();
+  #ifdef USE_TINYUSB
+    Serial.println("setup_usb!"); Serial.flush();
+    setup_usb();
+  #endif
 
   Serial.println("setup_parameter_inputs!"); Serial.flush();
   setup_parameter_inputs();
@@ -118,6 +120,17 @@ void setup_parameter_inputs() {
   lfo3 = new VoltageParameterInput((char*)"C", "ADC1", parameter_manager->voltage_sources->get(2));
   lfo4 = new VirtualParameterInput("LFO4", "LFOs", LFO_FREE);
   lfo5 = new VirtualParameterInput("LFO5", "LFOs", LFO_FREE);
+
+  lfo1->min_input_value = -5;
+  lfo1->max_input_value =  5;
+  lfo2->min_input_value = -5;
+  lfo2->max_input_value =  5;
+  lfo3->min_input_value = -5;
+  lfo3->max_input_value =  5;
+
+  lfo1->input_type = BIPOLAR;
+  lfo2->input_type = BIPOLAR;
+  lfo3->input_type = BIPOLAR;
   
   // tell the parameter manager about them
   parameter_manager->addInput(lfo1);
@@ -148,16 +161,19 @@ void setup_parameter_inputs() {
 
   p1->connect_input(lfo1, 1.0);
   p1->connect_input(lfo2, -0.25);
+  p1->connect_input(lfo5, 0.1);
 
   p2->connect_input(lfo2, 1.0);
   p2->connect_input(lfo3, -0.25);
+  p2->connect_input(lfo5, 0.1);
 
   p3->connect_input(lfo3, 1.0);
   p3->connect_input(lfo4, -0.25);
+  p3->connect_input(lfo5, 0.1);
 
   p4->connect_input(lfo1, 1.0);
-  p4->connect_input(lfo2, -0.25);
-  //p4->connect_input(lfo2, 0.33);
+  //p4->connect_input(lfo2, -0.25);
+  p4->connect_input(lfo5, -0.33);
   p4->connect_input(lfo3, -0.33);
 
   /*lfo1->locked_period = 4.0; //105; //4.0;
@@ -265,7 +281,11 @@ void calculate_colours(float peak) {
 
   for (int n = 0 ; n < NUM_PIXELS_RGB ; n++) {
     float pc = (float)n/(float)NUM_PIXELS_RGB;
-    hue = lfo1->get_normal_value_unipolar() * fmod(p1_history[(n+ticks)%NUM_PIXELS_RGB]*5.0,1.0); 
+    if (lfo5->get_normal_value_unipolar()>0.75) {
+      hue = lfo1->get_normal_value_unipolar();
+    } else {
+      hue = lfo1->get_normal_value_unipolar() * fmod(p1_history[(n+ticks)%NUM_PIXELS_RGB]*5.0,1.0); 
+    }
     sat = constrain(lfo2->get_normal_value_unipolar() * p2_history[n], 0.8, 1.0); 
     val = lfo3->get_normal_value_unipolar() * p3_history[(n-ticks)%NUM_PIXELS_RGB]; 
 
@@ -275,7 +295,7 @@ void calculate_colours(float peak) {
   }
   for (int n = 0 ; n < NUM_PIXELS_UV ; n++) {
     float pc = (float)n/(float)60;
-    uv = p4_history[n] * pc;// * p1->getLastModulatedNormalValue(); 
+    //uv = p4_history[n] * pc;// * p1->getLastModulatedNormalValue(); 
     //uint32_t color = leds->ColorHSV(65535.0*uv, 255.0*uv, 255.0*uv);  
     leds->setPixelColor(NUM_PIXELS_RGB + n, uv*255.0, uv*255.0, uv*255.0);
   }
@@ -290,7 +310,7 @@ void loop() {
   ticked = update_clock_ticks();
 
   //if (ticked) 
-    Serial.println("ticked!");
+  //  Serial.println("ticked!");
 
   parameter_manager->throttled_update_cv_input__all();
   //parameter_manager->update_inputs();
@@ -332,15 +352,22 @@ void loop() {
     ++p3_cursor;
     ++p4_cursor;*/
         
+    /*
     p1_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p1->getLastModulatedNormalValue();
     p2_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p2->getLastModulatedNormalValue();
-    p3_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p3->getLastModulatedNormalValue();
-    //p4_history[constrain(((int)lfo5->get_normal_value_unipolar() * NUM_PIXELS_UV), 0,NUM_PIXELS_UV -1)]  *= p4->getLastModulatedNormalValue();
-
+    p3_history[constrain((int)(lfo5->get_normal_value_unipolar() * NUM_PIXELS_RGB),0,NUM_PIXELS_RGB-1)] *= p3->getLastModulatedNormalValue();
+    */
+    p4_history[constrain((int)(lfo3->get_normal_value_unipolar() * NUM_PIXELS_UV), 0, NUM_PIXELS_UV -1)]  *= p4->getLastModulatedNormalValue();
+    
+    parameter_manager->output_parameter_representation();
   }
 
   set_bpm(10.0 + pow(100.0*(1.0-p4->getLastModulatedNormalValue()), 0.25+p1->getLastModulatedNormalValue()*2.0));
 
-  calculate_colours(peak);
+  if (lfo5->get_normal_value_unipolar()>0.5 && lfo4->get_normal_value_unipolar()>0.75) {
+    calculate_colours_chaser(peak);
+  } else {
+    calculate_colours(peak);
+  }
   leds->show();
 }

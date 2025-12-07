@@ -5,7 +5,7 @@
 
 //#define NUM_PIXELS 96
 //int NUM_PIXELS = 96;
-int NUM_PIXELS = 192;
+int NUM_PIXELS = 96 + 96 + 60;
 
 enum light_mode_t {
   DEFAULT,      // 'standard' mode of NUM_PIXELS elements per bar
